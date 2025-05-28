@@ -254,7 +254,7 @@ curl -X POST \
 # For macOS
 brew install e2b
 
-# Export environment variables
+# Export environment variables(you can query the  accessToken and teamApiKey in /opt/config.properties)
 export E2B_API_KEY=xxx
 export E2B_ACCESS_TOKEN=xxx
 export E2B_DOMAIN="<e2bdomain>"
