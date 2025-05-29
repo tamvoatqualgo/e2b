@@ -20,6 +20,7 @@ This project is built based on version [c746fd93d5f1260315c893dbd5d7290c0a41e52a
 - [Using E2B CLI](#using-e2b-cli)
 - [E2B SDK Cookbook](#e2b-sdk-cookbook)
 - [Troubleshooting](#troubleshooting)
+- [Resource Cleanup Recommendations](#resource-cleanup-recommendations)
 - [Appendix](#appendix)
 - [Architecture Diagram](#architecture-diagram)
 
@@ -296,9 +297,31 @@ poetry run start
 
 3. For other unresolved issues, contact support
 
+## Resource Cleanup Recommendations
+
+When you need to delete the E2B environment, follow these steps:
+
+1. **Terraform Resource Cleanup**:
+   - Navigate to the Terraform directory: `cd ~/infra-iac/terraform/`
+   - Run `terraform destroy` to remove infrastructure resources
+   - **Note**: Some resources have deletion protection enabled and cannot be deleted directly:
+     - **S3 Buckets**: You must manually empty these buckets before they can be deleted
+     - **Application Load Balancers (ALB)**: These may require manual deletion through the AWS console
+
+2. **CloudFormation Stack Cleanup**:
+   - **RDS Database**: The database has deletion protection enabled for compliance reasons
+     - First disable deletion protection through the RDS console
+     - Then delete the CloudFormation stack
+
+3. **Manual Resource Verification**:
+   - After running the automated cleanup steps, verify in the AWS console that all resources have been properly removed
+   - Check for any orphaned resources in:
+     - EC2 (instances, security groups, load balancers)
+     - S3 (buckets)
+     - RDS (database instances)
+     - ECR (container repositories)
+
 ## Appendix
-
-
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
