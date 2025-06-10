@@ -80,10 +80,6 @@ job "api" {
         args         = [
           "--port", "50001",
         ]
-        auth {
-          username = "AWS"
-          password = "${ecr_token}"
-        }
       }
     }
   }

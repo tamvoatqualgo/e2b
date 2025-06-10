@@ -78,8 +78,12 @@ This project is built based on version [c746fd93d5f1260315c893dbd5d7290c0a41e52a
 # Switch to root user for administrative privileges required for infrastructure setup
 sudo su root
 
+# Enter the working directory.
+cd /opt/infra/sample-e2b-on-aws
+
 # Initialize the environment by setting up AWS metadata, CloudFormation outputs,
 # and creating the configuration file at /opt/config.properties
+
 bash infra-iac/init.sh
 
 # Build custom AMI images using Packer for the E2B infrastructure

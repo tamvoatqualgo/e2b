@@ -57,10 +57,6 @@ job "client-proxy" {
         image        = "${account_id}.dkr.ecr.${AWSREGION}.amazonaws.com/e2b-orchestration/client-proxy:latest"      
         ports        = ["client-proxy"]
         args         = ["--port", "3002"]
-        auth {
-          username = "AWS"
-          password = "${ecr_token}"
-        }
       }
     }
   }

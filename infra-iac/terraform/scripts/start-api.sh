@@ -15,6 +15,9 @@ set -x
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
+sudo apt-get update
+sudo apt-get install -y amazon-ecr-credential-helper
+
 ulimit -n 1048576
 export GOMAXPROCS='nproc'
 

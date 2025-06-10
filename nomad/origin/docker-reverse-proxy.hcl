@@ -49,10 +49,6 @@ job "docker-reverse-proxy" {
         ports        = ["docker-reverse-proxy"]
         args         = ["--port", "5000"]
         force_pull   = true
-        auth {
-          username = "AWS"
-          password = "${ecr_token}"
-        }
       }
     }
   }

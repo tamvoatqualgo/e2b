@@ -38,6 +38,7 @@ job "redis" {
         image        = "redis:7.4.2-alpine"
         ports        = ["redis"]
         args = []
+        auth_soft_fail = true
       }
     }
   }
