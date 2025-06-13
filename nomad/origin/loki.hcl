@@ -63,7 +63,7 @@ common:
 
 storage_config:
   aws:
-    s3: "s3://${AWSREGION}/${BUCKET_LOKI_STORAGE_BUCKET}"
+    s3: "s3://${AWSREGION}/${BUCKET_LOKI_STORAGE}"
   tsdb_shipper:
     active_index_directory: /loki/tsdb-shipper-active
     cache_location: /loki/tsdb-shipper-cache
