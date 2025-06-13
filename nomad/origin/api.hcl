@@ -67,7 +67,7 @@ job "api" {
         CONSUL_HTTP_TOKEN             = "${consul_http_token}"
         OTEL_COLLECTOR_GRPC_ENDPOINT  = "localhost:4317"
         ADMIN_TOKEN                   = "${admin_token}"
-        REDIS_URL                     = "redis://redis.service.consul:6379"
+        REDIS_URL                     = "redis://${REDIS_ENDPOINT}:6379"
         DNS_PORT                      = 5353
         # This is here just because it is required in some part of our code which is transitively imported
         TEMPLATE_BUCKET_NAME          = "skip"

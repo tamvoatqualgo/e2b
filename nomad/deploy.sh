@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 
 declare -A jobs_minimal=(
-    ["redis"]="deploy/redis-deploy.hcl"
+    # ["redis"]="deploy/redis-deploy.hcl"
     ["api"]="deploy/api-deploy.hcl"
     ["orchestrator"]="deploy/orchestrator-deploy.hcl"
     ["client-proxy"]="deploy/client-proxy-deploy.hcl"
@@ -18,7 +18,7 @@ declare -A jobs_all=(
     ["loki"]="deploy/loki-deploy.hcl"
     ["logs-collector"]="deploy/logs-collector-deploy.hcl"
     ["otel-collector"]="deploy/otel-collector-deploy.hcl"
-    ["redis"]="deploy/redis-deploy.hcl"
+    # ["redis"]="deploy/redis-deploy.hcl"
     ["api"]="deploy/api-deploy.hcl"
     ["orchestrator"]="deploy/orchestrator-deploy.hcl"
     ["client-proxy"]="deploy/client-proxy-deploy.hcl"

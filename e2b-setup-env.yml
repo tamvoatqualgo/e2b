@@ -318,6 +318,23 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-db-sg"
+          
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group controlling access to the Redis cache (port 6379)
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: !Ref VpcBlock
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref VPC 
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-redis-sg"
 
   # ------------------------------------------------------------------------------------------------
   # IAM - Identity and Access Management roles and policies for secure resource access
@@ -458,6 +475,34 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-postgres"
+          
+  # ------------------------------------------------------------------------------------------------
+  # ElastiCache Redis - Redis cache for E2B platform
+  # ------------------------------------------------------------------------------------------------
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Subnet group for Redis cache
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-redis-subnet-group"
+          
+  RedisServerlessCache:
+    Type: AWS::ElastiCache::ServerlessCache
+    Properties:
+      Engine: redis
+      ServerlessCacheName: !Sub "${AWS::StackName}-redis"
+      SecurityGroupIds:
+        - !GetAtt RedisSecurityGroup.GroupId
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-redis"
 
   # ------------------------------------------------------------------------------------------------
   # EC2 Instance - Terraform Bastion Host for infrastructure management
@@ -661,6 +706,20 @@ Outputs:
     Value: !Ref WildcardCertificate
     Export:
       Name: CFNCERTARN
+      
+  # Redis outputs
+  RedisName:
+    Description: Redis cache name
+    Value: !Sub "${AWS::StackName}-redis"
+    Export:
+      Name: CFNREDISNAME
+      
+      
+  RedisConnectionString:
+    Description: Complete Redis connection string for application configuration
+    Value: !Sub "${AWS::StackName}-redis.serverless.${AWS::Region}.cache.amazonaws.com:6379"
+    Export:
+      Name: CFNREDISURL
 
   # Bastion Host information
   BastionPublicDNS:
