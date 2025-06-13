@@ -187,7 +187,7 @@ curl -X POST \
  "dockerfile": "FROM ubuntu:22.04\nRUN apt-get update && apt-get install -y python3\nCMD [\"python3\", \"-m\", \"http.server\", \"8080\"]",
  "memoryMB": 4096,
  "cpuCount": 4,
- "startCommand": "echo $HOME"
+ "startCmd": "/root/.jupyter/start-up.sh"
  }'
 ```
 
