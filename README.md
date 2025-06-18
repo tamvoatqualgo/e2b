@@ -170,70 +170,19 @@ bash nomad/deploy.sh otel-collector
 
 ### 5. Test by E2B SDK
 
-Test creation template（The script includes the following steps 1-6）
+1. Create a template:
 ```bash
-bash nomad/create_template.sh
+# Create a template from e2bdev/code-interpreter 
+bash packages/create_template.sh
+
+# Create a template from a Dockerfile
+bash packages/create_template.sh --docker-file <Docker_File_Path>
+
+# Create a template from an ECR image that in your own account
+bash packages/create_template.sh --ecr-image <ECR_IMAGE_URI>
 ```
 
-1. In EC2 Auto Scaling Group, set the desired capacity of **<e2b>client-asg** server to 1
-2. Create a sandbox template:
-
-```bash
-curl -X POST \
- https://api.e2b.example.com/templates \
- -H 'Authorization: <e2b_token>' \
- -H 'Content-Type: application/json' \
- -d '{
- "dockerfile": "FROM ubuntu:22.04\nRUN apt-get update && apt-get install -y python3\nCMD [\"python3\", \"-m\", \"http.server\", \"8080\"]",
- "memoryMB": 4096,
- "cpuCount": 4,
- "startCmd": "/root/.jupyter/start-up.sh"
- }'
-```
-
-3. Save the response (note the buildID and templateID):
-```json
-{
-  "aliases": null,
-  "buildCount": 0,
-  "buildID": "<buildID>",
-  "cpuCount": 0,
-  "createdAt": "0001-01-01T00:00:00Z",
-  "createdBy": null,
-  "lastSpawnedAt": "0001-01-01T00:00:00Z",
-  "memoryMB": 0,
-  "public": false,
-  "spawnCount": 0,
-  "templateID": "<templateID>",
-  "updatedAt": "0001-01-01T00:00:00Z"
-}
-```
-
-4. Create ECR registry:
-```bash
-aws ecr get-login-password --region <AWS_REGION> | docker login --username AWS --password-stdin <AWS_acccount_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com
-aws ecr create-repository --repository-name e2bdev/base/<templateID> --region <AWS_REGION> || true
-```
-
-5. Pull and push the image:
-```bash
-docker pull e2bdev/base
-
-aws ecr get-login-password --region <AWS_REGION> | docker login --username AWS --password-stdin <AWS_acccount_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com
-docker tag e2bdev/base:latest <AWS_acccount_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/e2bdev/base/<templateID>:<buildID>
-docker push <AWS_acccount_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/e2bdev/base/<templateID>:<buildID>
-```
-
-6. Build RootFS:
-```bash
-curl -X POST \
-  https://api.<e2bdomain>/templates/<templateID>/builds/<buildID> \
-  -H 'Authorization: <e2b_token>' \
-  -H 'Content-Type: application/json' 
-```
-
-7. Check API and Template Manager logs in Nomad Console for any issues
-8. Create a sandbox(Get the value of e2b_API to execute commands---  more ../infra-iac/db/config.json):
+2. Create a sandbox(Get the value of e2b_API to execute commands---  more ../infra-iac/db/config.json):
 ```bash
 curl -X POST \
  https://api.<e2bdomain>/sandboxes \
@@ -243,9 +192,6 @@ curl -X POST \
         "templateID": "<template_ID>",
         "timeout": 3600,
         "autoPause": true,
-        "envVars": {
-        "EXAMPLE_VAR": "example_value"
-        },
         "metadata": {
             "purpose": "test"
         }

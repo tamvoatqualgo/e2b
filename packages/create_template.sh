@@ -1,5 +1,41 @@
 #!/bin/bash
 
+# Default Dockerfile
+DOCKERFILE="FROM e2bdev/code-interpreter:latest"
+DOCKER_IMAGE="e2bdev/code-interpreter:latest"
+CREATE_TYPE="default"
+ECR_IMAGE=""
+
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --docker-file)
+            if [ -f "$2" ]; then
+                DOCKERFILE=$(cat "$2")
+                CREATE_TYPE="dockerfile"
+                echo "Will use below Dockerfile to create template: $DOCKERFILE"
+                shift 2
+            else
+                echo "Error: Dockerfile $2 not found"
+                exit 1
+            fi
+            ;;
+        --ecr-image)
+            ECR_IMAGE="$2"
+            DOCKERFILE="FROM $2"
+            CREATE_TYPE="ecr_image"
+            echo "Will use below ECR Image to create template: $ECR_IMAGE"
+            shift 2
+            ;;
+        *)
+            echo "Unknown parameter: $1"
+            echo "Usage: $0 [--docker-file <dockerfile-path>] [--ecr-image <ecr-image-uri>]"
+            exit 1
+            ;;
+    esac
+done
+
 # Change to the directory of the script
 cd "$(dirname "$0")"
 
@@ -40,12 +76,12 @@ RESPONSE=$(curl -s -X POST \
  "https://api.$CFNDOMAIN/templates" \
  -H "Authorization: $ACCESS_TOKEN" \
  -H 'Content-Type: application/json' \
- -d '{
- "dockerfile": "FROM ubuntu:22.04\nRUN apt-get update && apt-get install -y python3\nCMD [\"python3\", \"-m\", \"http.server\", \"8080\"]",
- "memoryMB": 4096,
- "cpuCount": 4,
- "startCommand": "echo $HOME"
- }')
+ -d "{
+ \"dockerfile\": \"$DOCKERFILE\",
+ \"memoryMB\": 4096,
+ \"cpuCount\": 4,
+ \"startCmd\": \"/root/.jupyter/start-up.sh\"
+ }")
 
 # Extract buildID and templateID from response
 if command -v jq &> /dev/null; then
@@ -60,11 +96,9 @@ fi
 echo "Response received:"
 echo "$RESPONSE"
 echo ""
-echo "Extracted values:"
+echo "Template creating information:"
 echo "buildID: $BUILD_ID"
 echo "templateID: $TEMPLATE_ID"
-
-
 
 # Get AWS account ID
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -82,47 +116,75 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Create ECR repository
+# Create base ECR repository
 echo "Creating ECR repository e2bdev/base/$TEMPLATE_ID..."
 aws ecr create-repository --repository-name e2bdev/base/$TEMPLATE_ID --region $AWSREGION || true
 if [ $? -ne 0 ]; then
     echo "Note: Repository may already exist or there was an error"
 fi
 
-# Pull the base Docker image
-echo "Pulling e2bdev/base Docker image..."
-docker pull e2bdev/base
+# Handle different create types
+case "$CREATE_TYPE" in
+    "dockerfile")
+        # Create a temporary directory for Docker build
+        TEMP_DIR=$(mktemp -d)
+        echo "$DOCKERFILE" > "$TEMP_DIR/Dockerfile"
+        
+        echo "Building Docker image from Dockerfile..."
+        docker build -t temp_image "$TEMP_DIR"
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to build Docker image from Dockerfile"
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+        rm -rf "$TEMP_DIR"
+        BASE_IMAGE="temp_image"
+        ;;
+        
+    "ecr_image")
+        echo "Pulling ECR image $ECR_IMAGE..."
+        docker pull $ECR_IMAGE
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to pull ECR image $ECR_IMAGE"
+            exit 1
+        fi
+        BASE_IMAGE=$ECR_IMAGE
+        ;;
+        
+    "default")
+        echo "Pulling default Docker image $DOCKER_IMAGE..."
+        docker pull $DOCKER_IMAGE
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to pull $DOCKER_IMAGE Docker image"
+            exit 1
+        fi
+        BASE_IMAGE=$DOCKER_IMAGE
+        ;;
+        
+    *)
+        echo "Error: Unknown CREATE_TYPE: $CREATE_TYPE"
+        exit 1
+        ;;
+esac
+
+# Tag and push the base image
+BASE_ECR_REPOSITORY="$AWS_ACCOUNT_ID.dkr.ecr.$AWSREGION.amazonaws.com/e2bdev/base/$TEMPLATE_ID:$BUILD_ID"
+echo "Tagging base Docker image as $BASE_ECR_REPOSITORY..."
+docker tag $BASE_IMAGE $BASE_ECR_REPOSITORY
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to pull e2bdev/base Docker image"
+    echo "Error: Failed to tag base Docker image"
     exit 1
 fi
 
-# Login to ECR again (to ensure credentials are fresh)
-echo "Logging in to ECR again..."
-aws ecr get-login-password --region $AWSREGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWSREGION.amazonaws.com
+echo "Pushing base Docker image to ECR..."
+docker push $BASE_ECR_REPOSITORY
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to login to ECR"
+    echo "Error: Failed to push base Docker image to ECR"
     exit 1
 fi
 
-# Tag the Docker image
-ECR_REPOSITORY="$AWS_ACCOUNT_ID.dkr.ecr.$AWSREGION.amazonaws.com/e2bdev/base/$TEMPLATE_ID:$BUILD_ID"
-echo "Tagging Docker image as $ECR_REPOSITORY..."
-docker tag e2bdev/base:latest $ECR_REPOSITORY
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to tag Docker image"
-    exit 1
-fi
-
-# Push the Docker image to ECR
-echo "Pushing Docker image to ECR..."
-docker push $ECR_REPOSITORY
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to push Docker image to ECR"
-    exit 1
-fi
-
-echo "Docker image successfully pushed to ECR: $ECR_REPOSITORY"
+echo "Docker images successfully pushed to ECR:"
+echo "Base image: $BASE_ECR_REPOSITORY"
 
 # Notify the API that the build is complete
 echo "Notifying API that the build is complete..."
@@ -141,9 +203,6 @@ while true; do
       "https://api.$CFNDOMAIN/templates/$TEMPLATE_ID/builds/$BUILD_ID/status" \
       -H "Authorization: $ACCESS_TOKEN")
     
-    echo "Current build status:"
-    echo "$FINAL_BUILD_STATUS_RESPONSE"
-    
     # Extract status value
     if command -v jq &> /dev/null; then
         STATUS=$(echo "$FINAL_BUILD_STATUS_RESPONSE" | jq -r '.status')
@@ -152,13 +211,14 @@ while true; do
         STATUS=$(echo "$FINAL_BUILD_STATUS_RESPONSE" | grep -o '"status": *"[^"]*"' | sed 's/"status": *"\([^"]*\)"/\1/')
     fi
     
+    echo "Current building status: $STATUS"
+
     if [ "$STATUS" != "building" ]; then
         echo "Build is no longer in 'building' state. Final status: $STATUS"
         echo "Done!"
         break
     fi
-    
-    echo "Build is still in progress. Checking again in 10 seconds..."
+
     sleep 10
 done
 
