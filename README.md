@@ -27,8 +27,7 @@ This project is built based on version [c746fd93d5f1260315c893dbd5d7290c0a41e52a
 ## Prerequisites
 
 - An AWS account with appropriate permissions
-- A domain name that you own(Cloudflare is recommended)
-
+- A domain name that you own(Cloudflare is recommended, or using a private dns for internal connection only)
 - Recommended for monitoring and logging
   - Grafana Account & Stack (see Step 15 for detailed notes)
   - Posthog Account (optional)
@@ -51,7 +50,7 @@ This project is built based on version [c746fd93d5f1260315c893dbd5d7290c0a41e52a
    - Upload the `e2b-setup-env.yml` template file
    - Configure the following parameters:
      - **Stack Name**: Enter a name for the stack, **must be lowercase**(e.g., `e2b-infra`)
-     - **Domain Configuration**: Enter a domain you own (e.g., `example.com`)
+     - **Domain Configuration**: Enter a domain you own (e.g., `example.com`), for using private host, check [Configure Private Hosted Zone] part
      - **EC2 Key Pair**: Select an existing key pair for SSH access
      - **AllowRemoteSSHIPs**: Adjust IP range for SSH access (default restricts to private networks for security)
      - **Database Settings**: Configure RDS parameters following password requirements(must be 8-30 characters with letters and numbers)
@@ -117,7 +116,7 @@ bash infra-iac/db/init-db.sh
 #### Application Image Configuration
 
 **Custom Image Building**
-   - **Build Custom Images**: Execute `bash packages/build.sh` to build custom E2B images and push them to your private ECR registry
+- **Build Custom Images**: Execute `bash packages/build.sh` to build custom E2B images and push them to your private ECR registry
 
 #### Deploy Nomad Applications
 
@@ -235,6 +234,98 @@ vim .env
 
 poetry run start
 ```
+
+## Configure Private Hosted Zone
+
+To avoid using external domain names and configure a private hosted zone for internal access, follow these steps:
+
+### 1. Create Private Hosted Zone in Route53
+
+1. **Navigate to Route53 Console**
+
+   - Go to AWS Route53 console
+   - Click "Create Hosted Zone"
+2. **Configure Hosted Zone Settings**
+
+   - **Domain name**: Enter your domain (e.g., `xiamingyang.site`)
+   - **Type**: Select "Private hosted zone"
+   - **VPC**: Select the region and VPC where your E2B infrastructure is deployed
+   - Click "Create hosted zone"
+
+### 2. Configure DNS Records
+
+After completing the `bash infra-iac/terraform/start.sh` step, an Application Load Balancer (ALB) will be created. You need to configure a CNAME record in your private hosted zone:
+
+1. **Create Wildcard CNAME Record**
+   - **Record name**: `*` (wildcard)
+   - **Record type**: `CNAME`
+   - **Value**: Enter the DNS name of the ALB (e.g., `e2btest-public-alb-1491434189.us-west-2.elb.amazonaws.com`)
+   - **TTL**: 300 (default)
+   - Click "Create records"
+
+### 3. Test the Configuration
+
+You can test the private hosted zone configuration using the following methods:
+
+**Test DNS Resolution:**
+
+```bash
+dig test.<your-domain-name>
+```
+
+**Example output:**
+
+```
+; <<>> DiG 9.18.30-0ubuntu0.22.04.2-Ubuntu <<>> test.xiamingyang.site
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 29956
+;; flags: qr rd ra; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;test.xiamingyang.site. IN A
+
+;; ANSWER SECTION:
+test.xiamingyang.site. 300 IN CNAME e2btest-public-alb-1491434189.us-west-2.elb.amazonaws.com.
+e2btest-public-alb-1491434189.us-west-2.elb.amazonaws.com. 60 IN A 52.39.63.230
+e2btest-public-alb-1491434189.us-west-2.elb.amazonaws.com. 60 IN A 52.39.227.199
+
+;; Query time: 3 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)
+;; WHEN: Tue Jun 24 10:25:29 UTC 2025
+;; MSG SIZE rcvd: 153
+```
+
+**Test HTTPS Access:**
+
+```bash
+curl -v https://nomad.<your-domain-name>
+```
+
+This should successfully connect to your Nomad dashboard through the ALB endpoint, confirming that the private hosted zone is working correctly.
+
+### 4. Important Notes
+
+- **E2B CLI Installation**: If you encounter Node.js version issues when installing E2B CLI on the deployment machine, you may need to upgrade Node.js:
+
+  ```bash
+  # Add NodeSource repository for Node.js 18
+  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
+  # Install Node.js
+  sudo apt-get install -y nodejs
+
+  # Verify version
+  node -v
+
+  # Reinstall E2B CLI
+  sudo npm uninstall -g @e2b/cli
+  sudo npm install -g @e2b/cli
+  ```
+- **External Domain Requirements**: For E2B CLI usage on macOS or external machines, you may still need to configure external domain access through your public DNS provider (e.g., Cloudflare).
+- **VPC Access**: The private hosted zone only works within the specified VPC. Ensure your client machines are within the same VPC or have appropriate VPC connectivity.
 
 ## Troubleshooting
 
