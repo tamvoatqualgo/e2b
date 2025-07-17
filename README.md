@@ -53,7 +53,7 @@ This project is built based on version [c746fd93d5f1260315c893dbd5d7290c0a41e52a
      - **Domain Configuration**: Enter a domain you own (e.g., `example.com`), for using private host, check [Configure Private Hosted Zone] part
      - **EC2 Key Pair**: Select an existing key pair for SSH access
      - **AllowRemoteSSHIPs**: Adjust IP range for SSH access (default restricts to private networks for security)
-     - **Database Settings**: Configure RDS parameters following password requirements(must be 8-30 characters with letters and numbers)
+     - **Database Settings**: Configure RDS parameters following password requirements(must be 8-30 characters with only letters and numbers, **special characters are not allowed**)
    - Complete all required fields and launch the stack
 
 2. **Validate Domain Certificate**
