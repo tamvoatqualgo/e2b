@@ -97,7 +97,7 @@ Parameters:
   DBName:
     Type: String
     #Default: postgres
-    Description: Initial database name for E2B application data (DBName must begin with a letter and contain only alphanumeric characters)
+    Description: Initial database name for E2B application data
   DBUsername:
     Type: String
     NoEcho: true 
