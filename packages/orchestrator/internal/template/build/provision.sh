@@ -3,6 +3,9 @@ set -euo pipefail
 
 echo "Starting provisioning script"
 
+apt-get update -y && apt-get upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get install -y e2fsprogs
+
 # fix: dpkg-statoverride: warning: --update given but /var/log/chrony does not exist
 mkdir -p /var/log/chrony
 
