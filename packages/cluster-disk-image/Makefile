@@ -8,7 +8,7 @@ init:
 ARCH := $(arch)
 ifeq ($(ARCH),x86_64)
   ARCHITECTURE := x86_64
-  AWS_INSTANCE_TYPE_DEFAULT := t3.xlarge
+  AWS_INSTANCE_TYPE_DEFAULT := t3.medium
 else ifeq ($(ARCH),aarch64)
   ARCHITECTURE := arm64
   AWS_INSTANCE_TYPE_DEFAULT := t4g.xlarge

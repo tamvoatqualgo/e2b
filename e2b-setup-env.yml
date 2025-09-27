@@ -31,8 +31,6 @@ Metadata:
           - Architecture
       - Label:
           default: Domain Configuration
-        Parameters:
-          - BaseDomain
       - Label:
           default: Bastion Configuration
         Parameters:
@@ -67,13 +65,7 @@ Parameters:
       - arm64
 
   # Domain Configuration - Settings for SSL certificate and DNS
-  BaseDomain:
-    Type: String
-    Description: >-
-      Base domain name (e.g. domain.com or sub.domain.com).
-      Wildcard certificate will be issued for *.{BaseDomain}
-    AllowedPattern: '^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$'
-    ConstraintDescription: Must be a valid domain (e.g. sub.domain.com)
+
 
   # VPC Configuration - Network address space for the entire infrastructure
   VpcBlock:
@@ -403,14 +395,7 @@ Resources:
   # ------------------------------------------------------------------------------------------------
   # Certificate - SSL/TLS certificate for secure HTTPS communication
   # ------------------------------------------------------------------------------------------------
-  WildcardCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Sub "*.${BaseDomain}"
-      ValidationMethod: DNS
-      DomainValidationOptions:
-        - DomainName: !Sub "*.${BaseDomain}"
-          ValidationDomain: !Ref BaseDomain
+
 
   # ------------------------------------------------------------------------------------------------
   # S3 Buckets - Object storage for Terraform state files and software artifacts
@@ -469,48 +454,38 @@ Resources:
         - Key: Name
           Value: !Sub "${AWS::StackName}-postgres-subnet-group"
 
-  AuroraCluster:
-    Type: AWS::RDS::DBCluster
-    Properties:
-      Engine: aurora-postgresql
-      EngineVersion: 16.8
-      Port: 5432
-      DBClusterIdentifier:
-        Fn::Join:
-          - "-"
-          - - Ref: "AWS::StackName"
-            - Ref: "DBInstanceIdentifier"
-      DBClusterParameterGroupName: default.aurora-postgresql16
-      DBSubnetGroupName: !Ref DBSubnetGroup
-      DatabaseName: !Ref DBName
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      ServerlessV2ScalingConfiguration:
-        MinCapacity: 0.5
-        MaxCapacity: 4
-      StorageEncrypted: true
-      DeletionProtection: !If [IsProd, true, false]
-      VpcSecurityGroupIds:
-        - !GetAtt DBSecurityGroup.GroupId
-      Tags:
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-aurora"
+  # PostgreSQLCluster:
+  #   Type: AWS::RDS::DBCluster
+  #   Properties:
+  #     Engine: postgres
+  #     EngineVersion: 16.8
+  #     DBClusterIdentifier:
+  #       Fn::Join:
+  #         - "-"
+  #         - - Ref: "AWS::StackName"
+  #           - "postgres-cluster"
+  #     DBSubnetGroupName: !Ref DBSubnetGroup
+  #     MasterUsername: !Ref DBUsername
+  #     MasterUserPassword: !Ref DBPassword
+  #     StorageEncrypted: true
+  #     VpcSecurityGroupIds:
+  #       - !GetAtt DBSecurityGroup.GroupId
 
-  AuroraInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      Engine: aurora-postgresql
-      DBInstanceIdentifier:
-        Fn::Join:
-          - "-"
-          - - Ref: "AWS::StackName"
-            - Ref: "DBInstanceIdentifier"
-      DBClusterIdentifier: !Ref AuroraCluster
-      DBInstanceClass: db.serverless
-      PubliclyAccessible: false
-      Tags:
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-aurora-instance"
+  # PostgreSQLInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     Engine: postgres
+  #     EngineVersion: 16.8
+  #     DBInstanceIdentifier:
+  #       Fn::Join:
+  #         - "-"
+  #         - - Ref: "AWS::StackName"
+  #           - "postgres-instance"
+  #     DBClusterIdentifier: !Ref PostgreSQLCluster  # Only needed if using a cluster
+  #     DBInstanceClass: db.t3.micro  # Adjust as needed
+  #     PubliclyAccessible: false
+  #     VpcSecurityGroupIds:
+  #       - !GetAtt DBSecurityGroup.GroupId
 
   # ------------------------------------------------------------------------------------------------
   # ElastiCache Redis - Redis cache for E2B platform
@@ -550,8 +525,8 @@ Resources:
     Properties:
       InstanceType: !If
         - IsX64
-        - c7i.xlarge
-        - c7g.xlarge
+        - t3.medium
+        - t2.medium        
       KeyName: !Ref KeyName
       IamInstanceProfile: !Ref EC2InstanceProfile
       SubnetId: !Ref PublicSubnet1
@@ -719,11 +694,7 @@ Outputs:
   # Database outputs
   DBEndpoint:
     Description: Aurora PostgreSQL database connection endpoint address
-    Value: !GetAtt AuroraCluster.Endpoint.Address
-
-  DBReaderEndpoint:
-    Description: Aurora PostgreSQL database reader endpoint address
-    Value: !GetAtt AuroraCluster.ReadEndpoint.Address
+    Value: "testing-clickops.csveoeo8i9s8.us-east-1.rds.amazonaws.com"
 
   # Stack information
   CFNSTACKNAME:
@@ -794,23 +765,10 @@ Outputs:
   CFNDBURL:
     Description: Complete PostgreSQL connection string for application configuration
     Value: !Sub
-      - "postgresql://${DBUsername}:${DBPassword}@${DBEndpoint}/${DBName}"
-      - DBEndpoint: !GetAtt AuroraCluster.Endpoint.Address
+      - "postgresql://postgres:Helloworld7@${DBEndpoint}/postgres"
+      - DBEndpoint: "testing-clickops.csveoeo8i9s8.us-east-1.rds.amazonaws.com"
     Export:
       Name: CFNDBURL
-
-  # Domain and certificate outputs
-  CFNDOMAIN:
-    Description: Base domain name for E2B services
-    Value: !Ref BaseDomain
-    Export:
-      Name: CFNDOMAIN
-
-  CFNCERTARN:
-    Description: SSL Certificate ARN for HTTPS endpoints
-    Value: !Ref WildcardCertificate
-    Export:
-      Name: CFNCERTARN
 
   # Redis outputs
   REDISNAME:

@@ -15,7 +15,7 @@ variable "aws_region" {
 
 variable "aws_instance_type" {
   type    = string
-  default = "t3.xlarge"
+  default = "t3.medium"
 }
 
 variable "aws_ami_name" {
