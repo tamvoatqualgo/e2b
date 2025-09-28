@@ -384,13 +384,13 @@ Resources:
   # ------------------------------------------------------------------------------------------------
   # Parameter Store - Secure storage for sensitive configuration values
   # ------------------------------------------------------------------------------------------------
-  DBPasswordParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "e2b-${AWS::StackName}-db-password"
-      Type: String
-      Value: !Ref DBPassword
-      Description: PostgreSQL database password stored securely in AWS Systems Manager Parameter Store
+  # DBPasswordParameter:
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Name: !Sub "e2b-${AWS::StackName}-db-password"
+  #     Type: String
+  #     Value: !Ref DBPassword
+  #     Description: PostgreSQL database password stored securely in AWS Systems Manager Parameter Store
 
   # ------------------------------------------------------------------------------------------------
   # Certificate - SSL/TLS certificate for secure HTTPS communication
