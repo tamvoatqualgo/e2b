@@ -898,7 +898,7 @@ resource "aws_lb_listener" "http" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.certarn
+  # certificate_arn   = var.certarn
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.client-proxy.arn

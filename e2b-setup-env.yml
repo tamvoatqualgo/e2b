@@ -35,13 +35,13 @@ Metadata:
           default: Bastion Configuration
         Parameters:
           - KeyName
-      - Label:
-          default: Database Configuration
-        Parameters:
-          - DBInstanceIdentifier
-          - DBName
-          - DBUsername
-          - DBPassword
+      # - Label:
+      #     default: Database Configuration
+      #   Parameters:
+      #     - DBInstanceIdentifier
+      #     - DBName
+      #     - DBUsername
+      #     - DBPassword
 
 # ===================================================================================================
 # Parameters - Input values required for the E2B infrastructure deployment
@@ -106,24 +106,24 @@ Parameters:
     Default: "10.0.0.0/8"
 
   # Database Configuration - PostgreSQL settings for E2B platform
-  DBInstanceIdentifier:
-    Type: String
-    Default: e2b-aurora-db
-    Description: Unique identifier for the Aurora PostgreSQL database cluster
-  DBName:
-    Type: String
-    Default: e2b
-    Description: Initial database name for E2B application data (must be characters with letters and numbers)
-  DBUsername:
-    Type: String
-    NoEcho: true
-    Description: Master username for PostgreSQL database (will not be displayed in console)
-  DBPassword:
-    Type: String
-    NoEcho: true
-    Description: Master password for PostgreSQL database (must be 8-30 characters with letters and numbers)
-    AllowedPattern: ^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{8,30}$
-    ConstraintDescription: Password must be 8-30 characters and contain at least one letter and one number
+  # DBInstanceIdentifier:
+  #   Type: String
+  #   Default: e2b-aurora-db
+  #   Description: Unique identifier for the Aurora PostgreSQL database cluster
+  # DBName:
+  #   Type: String
+  #   Default: e2b
+  #   Description: Initial database name for E2B application data (must be characters with letters and numbers)
+  # DBUsername:
+  #   Type: String
+  #   NoEcho: true
+  #   Description: Master username for PostgreSQL database (will not be displayed in console)
+  # DBPassword:
+  #   Type: String
+  #   NoEcho: true
+  #   Description: Master password for PostgreSQL database (must be 8-30 characters with letters and numbers)
+  #   AllowedPattern: ^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{8,30}$
+  #   ConstraintDescription: Password must be 8-30 characters and contain at least one letter and one number
 
 # ===================================================================================================
 # Conditions - Conditional logic for resource creation (none used in this template)
@@ -694,7 +694,7 @@ Outputs:
   # Database outputs
   DBEndpoint:
     Description: Aurora PostgreSQL database connection endpoint address
-    Value: "testing-clickops.csveoeo8i9s8.us-east-1.rds.amazonaws.com"
+    Value: "test.cmlcqgy8mkwq.us-east-1.rds.amazonaws.com"
 
   # Stack information
   CFNSTACKNAME:
@@ -766,7 +766,7 @@ Outputs:
     Description: Complete PostgreSQL connection string for application configuration
     Value: !Sub
       - "postgresql://postgres:Helloworld7@${DBEndpoint}/postgres"
-      - DBEndpoint: "testing-clickops.csveoeo8i9s8.us-east-1.rds.amazonaws.com"
+      - DBEndpoint: "test.cmlcqgy8mkwq.us-east-1.rds.amazonaws.com"
     Export:
       Name: CFNDBURL
 
