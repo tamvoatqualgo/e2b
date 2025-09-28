@@ -53,16 +53,16 @@ locals {
     server = {
       instance_type_x86    = var.environment == "prod" ? "t3.medium" : "t3.medium"
       instance_type_arm    = var.environment == "prod" ? "t3.medium" : "t3.medium"
-      desired_capacity = 3
-      max_size         = 3
-      min_size         = 3
+      desired_capacity = 2
+      max_size         = 2
+      min_size         = 2
     }
     # Client nodes run workloads and containers
     client = {
-      instance_type_x86    = "c5.metal"
-      instance_type_arm    = "c7g.metal"
+      instance_type_x86    = "t3.medium"
+      instance_type_arm    = "t3.medium"
       desired_capacity = 1
-      max_size         = 5
+      max_size         = 2
       min_size         = 0
     }
     # API nodes run the API service

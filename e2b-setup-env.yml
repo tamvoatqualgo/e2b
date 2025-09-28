@@ -65,6 +65,17 @@ Parameters:
       - arm64
 
   # Domain Configuration - Settings for SSL certificate and DNS
+  CFNDOMAIN:
+    Description: Base domain name for E2B services
+    Value: 'e2b.heyyytamvo.io.vn'
+    Export:
+      Name: CFNDOMAIN
+
+  CFNCERTARN:
+    Description: SSL Certificate ARN for HTTPS endpoints
+    Value: "arn:aws:acm:us-east-1:821410798779:certificate/0d1f2889-8046-476c-aa63-9b2b83e5dc90"
+    Export:
+      Name: CFNCERTARN
 
 
   # VPC Configuration - Network address space for the entire infrastructure
